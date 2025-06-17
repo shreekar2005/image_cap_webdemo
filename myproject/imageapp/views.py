@@ -4,6 +4,10 @@ from .models import UploadedImage
 from django.conf import settings
 import os
 from .test import process_image
+from django.shortcuts import redirect
+
+def index(request):
+    return redirect('upload_image')
 
 def upload_image(request):
     caption = None
