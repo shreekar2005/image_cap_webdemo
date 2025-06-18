@@ -1,20 +1,75 @@
+{% load static %}
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Document</title>
-    </head>
-    <body>
-        <form method="post" enctype="multipart/form-data">
-        {% csrf_token %}
-        {{ form.as_p }}
-        <button type="submit">Upload</button>
-    </form>
-    {% if caption %}
-        <h2>Generated Caption:</h2>
-        <pre>{{ caption }}</pre>
-    {% endif %}
+    <title>Image Caption Generator</title>
+    <link rel="stylesheet" href="{% static 'styles.css' %}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>✨ Image Caption Generator</h1>
+            <p class="subtitle">Upload an image and get an AI-generated caption instantly!</p>
+        </div>
 
+        <div class="upload-card card">
+            <form method="post" enctype="multipart/form-data" class="upload-form">
+                {% csrf_token %}
+                <div class="form-group">
+                    <label for="id_image" class="file-upload-label">
+                        <div class="upload-area" id="uploadArea">
+                            <div class="upload-icon">
+                                <i class="fas fa-cloud-upload-alt"></i>
+                            </div>
+                            <p>Click to browse or drag & drop your image</p>
+                            <span class="file-types">Supports: JPG, PNG, WEBP</span>
+                        </div>
+                        {{ form.image }}
+                    </label>
+                </div>
+                <button type="submit" class="submit-btn">
+                    <i class="fas fa-magic"></i> Generate Caption
+                </button>
+            </form>
+        </div>
+
+        <div class="results-container">
+            <div class="image-preview card" id="imagePreview">
+                <h2><i class="fas fa-image"></i> Selected Image</h2>
+                <div class="preview-container">
+                    <img id="preview" src="#" alt="Selected Image" class="preview-image">
+                </div>
+            </div>
+
+            {% if caption %}
+            <div class="caption-box card">
+                <h2><i class="fas fa-comment-dots"></i> Generated Caption</h2>
+                <div class="caption-content">
+                    <p>{{ caption }}</p>
+                    <button class="copy-btn" onclick="copyToClipboard('{{ caption }}')">
+                        <i class="fas fa-copy"></i> Copy
+                    </button>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <script src="{% static 'preview.js' %}"></script>
+    <script>
+        function copyToClipboard(text) {
+            navigator.clipboard.writeText(text).then(() => {
+                const btn = document.querySelector('.copy-btn');
+                btn.innerHTML = '<i class="fas fa-check"></i> Copied!';
+                setTimeout(() => {
+                    btn.innerHTML = '<i class="fas fa-copy"></i> Copy';
+                }, 2000);
+            });
+        }
+    </script>
 </body>
 </html>

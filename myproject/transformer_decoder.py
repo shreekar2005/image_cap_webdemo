@@ -61,7 +61,7 @@ class decoderTransformer(nn.Module):
         self.embedding = nn.Embedding(vocab_size , embedding_size)
         self.last_linear_layer = nn.Linear(embedding_size, vocab_size)
         self.encoder_layer = nn.Linear(2048, embedding_size)  # Assuming ResNet-50 features of size 2048
-        self.device = device
+        self.device = device  # Still keeping this for positional embeddings, etc.
         self.max_length = max_length
         self.pad_token = 0
         self.init_weights()
@@ -82,23 +82,28 @@ class decoderTransformer(nn.Module):
         return decoder_input_mask, decoder_input_pad_mask, decoder_input_pad_mask_bool
 
     def forward(self, encoded_image, decoder_inp):
-        encoded_image = encoded_image.permute(1,0,2)
+        device = encoded_image.device  # 🔁 Use the actual device of the input tensor
+
+        encoded_image = encoded_image.permute(1, 0, 2)
         encoded_image = self.encoder_layer(encoded_image)
 
-        decoder_inp_embed = self.embedding(decoder_inp)* math.sqrt(self.embedding_size)
-        
-        decoder_inp_embed = self.pos_encoder(decoder_inp_embed)
-        decoder_inp_embed = decoder_inp_embed.permute(1,0,2)
-        
+        decoder_inp_embed = self.embedding(decoder_inp) * math.sqrt(self.embedding_size)
+        decoder_inp_embed = self.pos_encoder(decoder_inp_embed)  # positional encoder already knows device
+        decoder_inp_embed = decoder_inp_embed.permute(1, 0, 2)
 
         decoder_input_mask, decoder_input_pad_mask, decoder_input_pad_mask_bool = self.generate_Mask(decoder_inp.size(1), decoder_inp)
-        decoder_input_mask = decoder_input_mask.to(self.device)
-        decoder_input_pad_mask = decoder_input_pad_mask.to(self.device)
-        decoder_input_pad_mask_bool = decoder_input_pad_mask_bool.to(self.device)
-        
 
-        decoder_output = self.TransformerDecoder(tgt = decoder_inp_embed, memory = encoded_image, tgt_mask = decoder_input_mask, tgt_key_padding_mask = decoder_input_pad_mask_bool)
-        
+        decoder_input_mask = decoder_input_mask.to(device)
+        decoder_input_pad_mask = decoder_input_pad_mask.to(device)
+        decoder_input_pad_mask_bool = decoder_input_pad_mask_bool.to(device)
+
+        decoder_output = self.TransformerDecoder(
+            tgt=decoder_inp_embed,
+            memory=encoded_image,
+            tgt_mask=decoder_input_mask,
+            tgt_key_padding_mask=decoder_input_pad_mask_bool
+        )
+
         final_output = self.last_linear_layer(decoder_output)
 
-        return final_output,  decoder_input_pad_mask
+        return final_output, decoder_input_pad_mask

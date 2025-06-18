@@ -1,3 +1,7 @@
+import sys
+import os
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
 import torch
 from PIL import Image
 from imageapp import resnet_encoder
@@ -14,7 +18,7 @@ def process_image(image_path):
     encoded = encoded.permute(0, 2, 3, 1)
     encoded = encoded.view(encoded.size(0), -1, encoded.size(-1))
 
-    model = torch.load("./imageapp/BestModel", weights_only=False)
+    model = torch.load("./imageapp/BestModel", map_location=device, weights_only=False)
     print("Model loaded and set to evaluation mode.")
     model.eval()
     model = model.to(device)
@@ -22,6 +26,10 @@ def process_image(image_path):
     input_sequence[0] = vocab_info.start_token
     input_sequence = torch.tensor(input_sequence).unsqueeze(0).long().to(device)
     predicted_sequence = []
+
+    print("Model is on device:", next(model.parameters()).device)
+    print("Encoded image device:", encoded.device)
+    print("Input sequence device:", input_sequence.device)
 
     with torch.no_grad():
         for eval_iter in range(vocab_info.max_seq_length):
@@ -41,3 +49,11 @@ def process_image(image_path):
 
     caption = " ".join(predicted_sequence)
     return caption
+
+
+    
+
+if __name__ == "__main__":
+    image_path = "media/uploads/monkey.jpg"
+    caption = process_image(image_path)
+    print("Generated caption:", caption)
